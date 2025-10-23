@@ -1,0 +1,12 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Auto Quote",
+  "name_for_model": "auto_quote",
+  "description_for_human": "Generate and retrieve auto insurance quotes",
+  "description_for_model": "Plugin to create auto insurance quotes and fetch quotes by ID. Use POST /quotes to create a quote and GET /quotes/{id} to retrieve it.",
+  "auth": { "type": "none" },
+  "api": { "type": "openapi", "url": "../openapi.yaml", "is_user_authenticated": false },
+  "logo_url": "../logo.svg",
+  "contact_email": "support@example.com",
+  "legal_info_url": "https://example.com/legal"
+}
