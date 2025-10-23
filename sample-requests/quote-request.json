@@ -1,0 +1,48 @@
+{
+  "state": "MD",
+  "policyStart": "2025-11-01",
+  "personal": {
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "dob": "1985-07-04",
+    "email": "jane.doe@example.com",
+    "phone": "301-555-0123",
+    "address": {
+      "street": "123 Main St",
+      "city": "Clarksburg",
+      "state": "MD",
+      "zip": "20871"
+    }
+  },
+  "drivers": [
+    {
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "dob": "1985-07-04",
+      "licenseNumber": "D123456789012",
+      "licenseState": "MD",
+      "yearsLicensed": 15,
+      "violations": []
+    }
+  ],
+  "vehicles": [
+    {
+      "year": 2020,
+      "make": "Honda",
+      "model": "Civic",
+      "usage": "commute",
+      "annualMileage": 12000,
+      "safety": { "abs": true, "airbags": true, "antiTheft": true }
+    }
+  ],
+  "coverage": {
+    "liability": { "biPerPerson": 100000, "biPerAccident": 300000, "pd": 100000 },
+    "umUim": true,
+    "pipMedpay": false,
+    "collisionDeductible": 500,
+    "compDeductible": 500,
+    "roadside": false,
+    "rental": false
+  },
+  "history": { "priorInsurance": true, "priorCarrier": "Progressive", "continuousMonths": 24 }
+}

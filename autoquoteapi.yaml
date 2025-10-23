@@ -1,0 +1,261 @@
+openapi: 3.0.0
+info:
+  title: Auto Quote API
+  version: 1.0.0
+  description: >
+    Static-response Auto Quote API. Secured via OAuth at the proxy layer.
+    Intended for ChatGPT plugin consumption.
+
+servers:
+  - url: https://quote-proxy-qmypa0.5sc6y6-3.usa-e2.cloudhub.io/
+
+
+
+components:
+
+  schemas:
+    Address:
+      type: object
+      required: [street, city, state, zip]
+      properties:
+        street: { type: string, example: "123 Main St" }
+        city:   { type: string, example: "Clarksburg" }
+        state:  { type: string, pattern: "^[A-Z]{2}$", example: "MD" }
+        zip:    { type: string, pattern: "^[0-9]{5}$", example: "20871" }
+
+    PersonalInfo:
+      type: object
+      required: [firstName, lastName, dob, email, phone, address]
+      properties:
+        firstName: { type: string, example: "Jane" }
+        lastName:  { type: string, example: "Doe" }
+        dob:       { type: string, format: date, example: "1985-07-04" }
+        email:     { type: string, format: email, example: "jane.doe@example.com" }
+        phone:     { type: string, example: "301-555-0123" }
+        address:   { $ref: '#/components/schemas/Address' }
+
+    Driver:
+      type: object
+      required: [firstName, lastName, dob, licenseNumber, licenseState, yearsLicensed]
+      properties:
+        firstName: { type: string, example: "Jane" }
+        lastName:  { type: string, example: "Doe" }
+        dob:       { type: string, format: date, example: "1985-07-04" }
+        gender:
+          type: string
+          enum: [male, female, other]
+          nullable: true
+        maritalStatus:
+          type: string
+          enum: [single, married, divorced, widowed]
+          nullable: true
+        licenseNumber: { type: string, example: "D123456789012" }
+        licenseState:  { type: string, pattern: "^[A-Z]{2}$", example: "MD" }
+        yearsLicensed: { type: integer, minimum: 0, maximum: 80, example: 15 }
+        sr22:          { type: boolean, default: false }
+        violations:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string, enum: [speeding, at_fault_accident, dui, other] }
+              date: { type: string, format: date }
+
+    Vehicle:
+      type: object
+      required: [year, make, model, usage, annualMileage]
+      properties:
+        vin:
+          type: string
+          pattern: "^[A-HJ-NPR-Z0-9]{17}$"
+          nullable: true
+          example: "1HGCM82633A004352"
+        year:  { type: integer, minimum: 1990, maximum: 2026, example: 2020 }
+        make:  { type: string, example: "Honda" }
+        model: { type: string, example: "Civic" }
+        trim:  { type: string, nullable: true }
+        ownership:
+          type: string
+          enum: [own, finance, lease]
+          nullable: true
+        usage: { type: string, enum: [commute, pleasure, business], example: "commute" }
+        annualMileage: { type: integer, minimum: 0, maximum: 100000, example: 12000 }
+        commuteMilesOneWay: { type: integer, minimum: 0, maximum: 200, nullable: true }
+        safety:
+          type: object
+          properties:
+            abs: { type: boolean, example: true }
+            antiTheft: { type: boolean, example: true }
+            airbags: { type: boolean, example: true }
+
+    Coverage:
+      type: object
+      required: [liability, collisionDeductible, compDeductible]
+      properties:
+        liability:
+          type: object
+          required: [biPerPerson, biPerAccident, pd]
+          properties:
+            biPerPerson:   { type: integer, enum: [25000, 50000, 100000], example: 100000 }
+            biPerAccident: { type: integer, enum: [50000, 100000, 300000], example: 300000 }
+            pd:            { type: integer, enum: [25000, 50000, 100000], example: 100000 }
+        umUim: { type: boolean, default: true, example: true }
+        pipMedpay: { type: boolean, default: false, example: false }
+        collisionDeductible: { type: integer, enum: [250, 500, 1000], example: 500 }
+        compDeductible:      { type: integer, enum: [250, 500, 1000], example: 500 }
+        roadside: { type: boolean, default: false, example: false }
+        rental:   { type: boolean, default: false, example: false }
+
+    InsuranceHistory:
+      type: object
+      properties:
+        priorInsurance:   { type: boolean, default: false, example: true }
+        priorCarrier:     { type: string, nullable: true, example: "Progressive" }
+        continuousMonths: { type: integer, minimum: 0, maximum: 120, nullable: true, example: 24 }
+
+    QuoteRequest:
+      type: object
+      required: [state, policyStart, personal, drivers, vehicles, coverage]
+      properties:
+        state: { type: string, pattern: "^[A-Z]{2}$", example: "MD" }
+        policyStart: { type: string, format: date, example: "2025-11-01" }
+        personal: { $ref: '#/components/schemas/PersonalInfo' }
+        drivers:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Driver' }
+        vehicles:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Vehicle' }
+        coverage: { $ref: '#/components/schemas/Coverage' }
+        history:  { $ref: '#/components/schemas/InsuranceHistory' }
+
+    QuoteResponse:
+      type: object
+      properties:
+        quoteId: { type: string, example: "Q123456789" }
+        carrier: { type: string, example: "Mock Insurance Co" }
+        term:    { type: string, example: "6 months" }
+        totalPremium: { type: number, example: 582.45 }
+        monthlyPremium: { type: number, example: 97.07 }
+        state: { type: string, example: "MD" }
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              vehicle: { type: string, example: "2020 Honda Civic" }
+              premium: { type: number, example: 320.15 }
+        chosenCoverage: { $ref: '#/components/schemas/Coverage' }
+
+paths:
+  /quotes:
+    post:
+      summary: Create a quote (static)
+      operationId: createQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuoteRequest' }
+            example:
+              state: "MD"
+              policyStart: "2025-11-01"
+              personal:
+                firstName: Jane
+                lastName: Doe
+                dob: 1985-07-04
+                email: jane.doe@example.com
+                phone: "301-555-0123"
+                address:
+                  street: "123 Main St"
+                  city: "Clarksburg"
+                  state: "MD"
+                  zip: "20871"
+              drivers:
+                - firstName: Jane
+                  lastName: Doe
+                  dob: 1985-07-04
+                  licenseNumber: D123456789012
+                  licenseState: MD
+                  yearsLicensed: 15
+                  violations: []
+              vehicles:
+                - year: 2020
+                  make: Honda
+                  model: Civic
+                  usage: commute
+                  annualMileage: 12000
+                  safety: { abs: true, airbags: true, antiTheft: true }
+              coverage:
+                liability: { biPerPerson: 100000, biPerAccident: 300000, pd: 100000 }
+                umUim: true
+                pipMedpay: false
+                collisionDeductible: 500
+                compDeductible: 500
+                roadside: false
+                rental: false
+              history:
+                priorInsurance: true
+                priorCarrier: "Progressive"
+                continuousMonths: 24
+      responses:
+        '200':
+          description: Static quote response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuoteResponse' }
+              example:
+                quoteId: "Q123456789"
+                carrier: "Mock Insurance Co"
+                term: "6 months"
+                totalPremium: 582.45
+                monthlyPremium: 97.07
+                state: "MD"
+                breakdown:
+                  - vehicle: "2020 Honda Civic"
+                    premium: 320.15
+                chosenCoverage:
+                  liability: { biPerPerson: 100000, biPerAccident: 300000, pd: 100000 }
+                  umUim: true
+                  pipMedpay: false
+                  collisionDeductible: 500
+                  compDeductible: 500
+                  roadside: false
+                  rental: false
+
+  /quotes/{id}:
+    get:
+      summary: Get a quote by id (static)
+      operationId: getQuote
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+          example: Q123456789
+      responses:
+        '200':
+          description: Static quote by id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuoteResponse' }
+              example:
+                quoteId: "Q123456789"
+                carrier: "Mock Insurance Co"
+                term: "6 months"
+                totalPremium: 582.45
+                monthlyPremium: 97.07
+                state: "MD"
+                breakdown:
+                  - vehicle: "2020 Honda Civic"
+                    premium: 320.15
+                chosenCoverage:
+                  liability: { biPerPerson: 100000, biPerAccident: 300000, pd: 100000 }
+                  umUim: true
+                  pipMedpay: false
+                  collisionDeductible: 500
+                  compDeductible: 500
+                  roadside: false
+                  rental: false
